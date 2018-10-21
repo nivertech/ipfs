@@ -38,6 +38,14 @@ defmodule IPFS do
   end
 
   @doc """
+  TODO
+  """
+  @spec get_raw(t, path, keyword) :: result
+  def get_raw(conn, path, params \\ []) do
+    request_raw(conn, path, &HTTPoison.get(&1, [], params: params))
+  end
+
+  @doc """
   High level function allowing to send file contents to the node.
 
   A `path` has to be specified along with the `filename` to be sent. Also, a list
@@ -48,6 +56,18 @@ defmodule IPFS do
     request(conn, path, &HTTPoison.post(&1, multipart(filename), params: params))
   end
 
+  @doc """
+  TODO:
+  High level function allowing to send a binary to the node.
+
+  A `path` has to be specified along with the `filename` to be sent. Also, a list
+  of `params` can be optionally sent.
+  """
+  @spec post_binary(t, path, filename, binary, keyword) :: result
+  def post_binary(conn, path, filename, body, params \\ []) do
+    request(conn, path, &HTTPoison.post(&1, multipart(filename, body), params: params))
+  end
+
   # Private stuff.
 
   @typep poison_result :: {:ok, Response.t() | AsyncResponse.t()} | {:error, Error.t()}
@@ -56,9 +76,32 @@ defmodule IPFS do
   defp request(conn, path, requester) do
     conn
     |> to_string()
+    # |> IO.inspect(label: "beofre to_string")
     |> pipe(&"#{&1}/#{path}")
+    # |> IO.inspect(label: "after fmt")
     |> requester.()
+    # |> IO.inspect(label: "after requester")
     |> to_result
+  end
+
+  defp request_raw(conn, path, requester) do
+    conn
+    |> to_string()
+    # |> IO.inspect(label: "beofre to_string")
+    |> pipe(&"#{&1}/#{path}")
+    # |> IO.inspect(label: "after fmt")
+    |> requester.()
+    # |> IO.inspect(label: "after requester")
+    |> case do
+      {:ok, %Response{status_code: 200, body: b}} when is_binary(b) ->
+        {:ok, b}
+
+      {:ok, %Response{status_code: s, body: b}} ->
+        {:error, "Error status code: #{s}, #{b}"}
+
+      other ->
+        {:error, other}
+    end
   end
 
   @spec to_result(poison_result) :: result
@@ -88,6 +131,14 @@ defmodule IPFS do
   defp multipart(filename) do
     {:multipart,
      [{:file, filename, {"form-data", [name: Path.basename(filename), filename: filename]}, []}]}
+  end
+
+  @spec multipart(filename, binary) ::
+          {:multipart,
+           [{filename, binary, {String.t(), [name: String.t(), filename: filename]}, []}]}
+  defp multipart(filename, body) do
+    {:multipart,
+     [{filename, body, {"form-data", [name: Path.basename(filename), filename: filename]}, []}]}
   end
 
   defimpl String.Chars, for: IPFS do

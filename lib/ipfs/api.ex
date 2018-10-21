@@ -1,7 +1,7 @@
 defmodule IPFS.API do
   @moduledoc false
 
-  import IPFS, only: [get: 2, get: 3, post_file: 4]
+  import IPFS, only: [get: 2, get: 3, get_raw: 3, post_file: 4, post_binary: 5]
   import IPFS.Utils, only: [remap_fields: 2, remap_array: 2, successify_with: 1, okify: 1]
 
   @type t :: IPFS.t()
@@ -99,6 +99,28 @@ defmodule IPFS.API do
     |> post_file("add", filename, params)
     |> remap_fields(name: "Name", hash: "Hash", size: "Size")
     |> okify
+  end
+
+  @doc """
+  Adds binary identified by its `filename` on disk to the IPFS network.
+
+  A range of `params` can be specified, please refer to the official
+  [IPFS documentation](https://ipfs.io/docs/api/#apiv0add) for more information.
+  """
+  @spec add_object(t, filename, binary, keyword) :: result
+  def add_object(conn, filename, body, params \\ []) do
+    conn
+    |> post_binary("add", filename, body, params)
+    |> remap_fields(name: "Name", hash: "Hash", size: "Size")
+    |> okify
+  end
+
+  @doc """
+  TODO
+  """
+  @spec get_object(t, binary) :: result
+  def get_object(conn, multihash) do
+    get_raw(conn, "cat", [{"arg", multihash}])
   end
 
   # Pinning.
