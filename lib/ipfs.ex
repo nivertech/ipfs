@@ -138,7 +138,16 @@ defmodule IPFS do
            [{filename, binary, {String.t(), [name: String.t(), filename: filename]}, []}]}
   defp multipart(filename, body) do
     {:multipart,
-     [{filename, body, {"form-data", [name: Path.basename(filename), filename: filename]}, []}]}
+     [
+       {
+         filename,
+         body,
+         {"form-data", [name: Path.basename(filename), filename: filename]},
+         # {"form-data", [name: Path.basename(filename), filename: filename, "only-hash": "true"]},
+         # [{"only-hash", "true"}]
+         []
+       }
+     ]}
   end
 
   defimpl String.Chars, for: IPFS do

@@ -116,6 +116,23 @@ defmodule IPFS.API do
   end
 
   @doc """
+  Get hash of a binary identified by its `filename` on disk to the IPFS network.
+
+  A range of `params` can be specified, please refer to the official
+  [IPFS documentation](https://ipfs.io/docs/api/#apiv0add) for more information.
+  """
+  @spec hash_object(t, filename, binary, keyword) :: result
+  def hash_object(conn, filename, body, params \\ []) do
+    conn
+    # |> post_binary("add", filename, body, params)
+    |> post_binary("add?only-hash=true", filename, body, params)
+    # |> post_binary("add", filename, body, [{"only-hash", "true"}] ++ params)
+    # |> post_binary("add", filename, body, "only-hash=true")
+    |> remap_fields(name: "Name", hash: "Hash", size: "Size")
+    |> okify
+  end
+
+  @doc """
   TODO
   """
   @spec get_object(t, binary) :: result
